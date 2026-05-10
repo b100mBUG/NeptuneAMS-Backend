@@ -25,12 +25,16 @@ async def _expire_schools_job():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()
+    try:
+        await _expire_schools_job()
+    except Exception as e:
+        print(f"[startup] expire_schools_job failed: {e}")
+
     scheduler.add_job(_expire_schools_job, "interval", hours=24, id="expire_schools")
     scheduler.start()
-    # Run once immediately on startup so nothing slips through on restart
-    await _expire_schools_job()
+
     yield
+
     scheduler.shutdown(wait=False)
 
 
